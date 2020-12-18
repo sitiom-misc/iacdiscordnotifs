@@ -66,7 +66,7 @@ namespace IacDiscordNotifs
                     {
                         MimeMessage message = await client.Inbox.GetMessageAsync(messages[i].UniqueId);
                         Console.WriteLine($"{message.Date}: {message.Subject}");
-                        SendIacNotifToWebhook(message.HtmlBody, uint.Parse(Environment.GetEnvironmentVariable("WEBHOOK_ID")), Environment.GetEnvironmentVariable("WEBHOOK_TOKEN"));
+                        SendIacNotifToWebhook(message.HtmlBody, uint.Parse(Environment.GetEnvironmentVariable("WEBHOOK_ID")), Environment.GetEnvironmentVariable("WEBHOOK_TOKEN"), Environment.GetEnvironmentVariable("MESSAGE_TEXT"));
                     }
                 }
 
@@ -74,7 +74,7 @@ namespace IacDiscordNotifs
             } while (true);
         }
 
-        private static async void SendIacNotifToWebhook(string htmlMessage, ulong webhookId, string webhookToken)
+        private static async void SendIacNotifToWebhook(string htmlMessage, ulong webhookId, string webhookToken, string messageText = null)
         {
             Converter converter = new Converter();
             HtmlDocument message = new HtmlDocument();
@@ -94,7 +94,7 @@ namespace IacDiscordNotifs
                 Color = new Color(48, 92, 168)
             };
 
-            await client.SendMessageAsync("", embeds: new[] { embed.Build() }, username: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[1]").InnerText.Trim(), avatarUrl: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/img").GetAttributeValue("src", null));
+            await client.SendMessageAsync(messageText, embeds: new[] { embed.Build() }, username: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[1]").InnerText.Trim(), avatarUrl: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/img").GetAttributeValue("src", null));
         }
     }
 }
