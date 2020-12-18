@@ -66,7 +66,7 @@ namespace IacDiscordNotifs
                     {
                         MimeMessage message = await client.Inbox.GetMessageAsync(messages[i].UniqueId);
                         Console.WriteLine($"{message.Date}: {message.Subject}");
-                        SendIacNotifToWebhook(message.HtmlBody, uint.Parse(Environment.GetEnvironmentVariable("WEBHOOK_ID")), Environment.GetEnvironmentVariable("WEBHOOK_TOKEN"), Environment.GetEnvironmentVariable("MESSAGE_TEXT"));
+                        SendIacNotifToWebhook(message.HtmlBody, ulong.Parse(Environment.GetEnvironmentVariable("WEBHOOK_ID")), Environment.GetEnvironmentVariable("WEBHOOK_TOKEN"), Environment.GetEnvironmentVariable("MESSAGE_TEXT"));
                     }
                 }
 
