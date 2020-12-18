@@ -49,11 +49,14 @@ namespace IacDiscordNotifs
                 {
                     //Disconnect Connection
                     await client.DisconnectAsync(true);
-                    break;
+                    throw;
+                }
+                finally
+                {
+                    _done.Dispose();
                 }
 
                 // Message Count has changed or Idle has timeout
-                _done.Dispose();
                 List<IMessageSummary> messages =
                     (await client.Inbox.FetchAsync(0, -1, MessageSummaryItems.Full | MessageSummaryItems.UniqueId))
                     .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.StartsWith(ignoreFilter)))
