@@ -10,3 +10,4 @@ Setup the following environment variables accordingly:
 - `GMAIL_PASSWORD`
 - `WEBHOOK_ID`
 - `WEBHOOK_TOKEN`
+- `MESSAGE_TEXT`
