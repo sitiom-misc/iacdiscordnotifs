@@ -88,7 +88,7 @@ namespace IacDiscordNotifs
                 Description = converter.Convert(message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[2]/tr[2]/td").InnerHtml),
                 Footer = new EmbedFooterBuilder
                 {
-                    Text = message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[2]").InnerText.Trim()
+                    Text = $"{message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[2]").InnerText.Trim()} • Automatic notification via https://github.com/iJSD-Org/IacDiscordNotifs"
                 },
                 ThumbnailUrl = "https://portalv2.iacademy.edu.ph/images/iacnew.png",
                 Color = new Color(48, 92, 168)
