@@ -16,7 +16,7 @@ namespace IacDiscordNotifs
     static class Program
     {
         private static CancellationTokenSource _done;
-        private static readonly string[] IgnoreFilter = { "Graded:", "Given:", "Due soon:", "You were awarded" };
+        private static readonly string[] IgnoreFilter = { "Graded:", "Due soon:", "You were awarded" };
 
         private static async Task Main()
         {
