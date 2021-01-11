@@ -30,7 +30,7 @@ namespace IacDiscordNotifs
             int count =
                 (await client.Inbox.FetchAsync(0, -1, MessageSummaryItems.Full | MessageSummaryItems.UniqueId))
                 .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.StartsWith(ignoreFilter)))
-                .OrderByDescending(m => m.Date)
+                .OrderBy(m => m.Date)
                 .Count();
 
             client.Inbox.CountChanged += (sender, e) =>
@@ -60,7 +60,7 @@ namespace IacDiscordNotifs
                 List<IMessageSummary> messages =
                     (await client.Inbox.FetchAsync(0, -1, MessageSummaryItems.Full | MessageSummaryItems.UniqueId))
                     .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.StartsWith(ignoreFilter)))
-                    .OrderByDescending(m => m.Date)
+                    .OrderBy(m => m.Date)
                     .ToList();
 
                 if (messages.Count > count)
