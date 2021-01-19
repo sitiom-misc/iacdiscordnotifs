@@ -24,6 +24,8 @@ namespace IacDiscordNotifs
             await client.ConnectAsync("imap.gmail.com", 993, true);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
             await client.AuthenticateAsync(Environment.GetEnvironmentVariable("GMAIL_USERNAME"), Environment.GetEnvironmentVariable("GMAIL_PASSWORD"));
+            Console.WriteLine($"Logged in as {Environment.GetEnvironmentVariable("GMAIL_USERNAME")}");
+
             await client.Inbox.OpenAsync(FolderAccess.ReadOnly);
 
             // Keep track of messages
@@ -65,7 +67,7 @@ namespace IacDiscordNotifs
 
                 if (messages.Count > count)
                 {
-                    for (var i = messages.Count - 1; i >= messages.Count - (messages.Count - count); i--)
+                    for (var i = count; i < messages.Count; i++)
                     {
                         MimeMessage message = await client.Inbox.GetMessageAsync(messages[i].UniqueId);
                         Console.WriteLine($"{message.Date}: {message.Subject}");
