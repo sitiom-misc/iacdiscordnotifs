@@ -84,20 +84,60 @@ namespace IacDiscordNotifs
             message.LoadHtml(htmlMessage);
 
             using var client = new DiscordWebhookClient(webhookId, webhookToken);
-            var embed = new EmbedBuilder
-            {
-                Title = converter.Convert(message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[2]/td[2]").InnerHtml),
-                Url = converter.Convert(message.DocumentNode.SelectSingleNode("/html/body/table//tr/td/table/tr[3]/td/table//tr/td/a[1]").GetAttributeValue("href", null)),
-                Description = converter.Convert(message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[2]/tr[2]/td").InnerHtml),
-                Footer = new EmbedFooterBuilder
-                {
-                    Text = $"{message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[2]").InnerText.Trim()} • Automatic notification via https://github.com/iJSD-Org/IacDiscordNotifs"
-                },
-                ThumbnailUrl = "https://portalv2.iacademy.edu.ph/images/iacnew.png",
-                Color = new Color(48, 92, 168)
-            };
 
-            await client.SendMessageAsync(messageText, embeds: new[] { embed.Build() }, username: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[1]").InnerText.Trim(), avatarUrl: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/img").GetAttributeValue("src", null));
+            List<Embed> embeds = new List<Embed>();
+
+            // Handle discord character limit
+            string description = converter.Convert(message.DocumentNode
+                .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[2]/tr[2]/td").InnerHtml);
+            string[] descriptionChunks = Split(description, 2048).ToArray();
+            for (var i = 0; i < descriptionChunks.Length; i++)
+            {
+                string descriptionChunk = descriptionChunks[i];
+
+                var embed = new EmbedBuilder
+                {
+                    Description = descriptionChunk,
+                    Color = new Color(48, 92, 168)
+                };
+
+                if (i == 0)
+                {
+                    embed.Title = converter.Convert(message.DocumentNode
+                        .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[2]/td[2]").InnerHtml);
+                    embed.Url = converter.Convert(message.DocumentNode
+                        .SelectSingleNode("/html/body/table//tr/td/table/tr[3]/td/table//tr/td/a[1]")
+                        .GetAttributeValue("href", null));
+                    embed.ThumbnailUrl = "https://portalv2.iacademy.edu.ph/images/iacnew.png";
+                }
+                if (i == descriptionChunks.Length - 1)
+                {
+                    embed.Footer = new EmbedFooterBuilder
+                    {
+                        Text =
+                            $"{message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[2]").InnerText.Trim()} • Automatic notification via https://github.com/iJSD-Org/IacDiscordNotifs"
+                    };
+                }
+
+                embeds.Add(embed.Build());
+            }
+
+            await client.SendMessageAsync(messageText, embeds: embeds, username: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[1]").InnerText.Trim(), avatarUrl: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/img").GetAttributeValue("src", null));
+        }
+
+        private static IEnumerable<string> Split(this string str, int chunkSize)
+        {
+            if (string.IsNullOrEmpty(str) || chunkSize < 1)
+                throw new ArgumentException("String can not be null or empty and chunk size should be greater than zero.");
+            var chunkCount = str.Length / chunkSize + (str.Length % chunkSize != 0 ? 1 : 0);
+            for (var i = 0; i < chunkCount; i++)
+            {
+                var startIndex = i * chunkSize;
+                if (startIndex + chunkSize >= str.Length)
+                    yield return str.Substring(startIndex);
+                else
+                    yield return str.Substring(startIndex, chunkSize);
+            }
         }
     }
 }
