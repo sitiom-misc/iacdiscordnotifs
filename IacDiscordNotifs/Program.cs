@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Webhook;
+using Ganss.XSS;
 using Html2Markdown;
 using HtmlAgilityPack;
 using MailKit;
@@ -82,16 +83,23 @@ namespace IacDiscordNotifs
         private static async void SendIacNotifToWebhook(string htmlMessage, ulong webhookId, string webhookToken, string messageText = null)
         {
             Converter converter = new Converter();
+            var sanitizer = new HtmlSanitizer();
             HtmlDocument message = new HtmlDocument();
+
             message.LoadHtml(htmlMessage);
 
             using var client = new DiscordWebhookClient(webhookId, webhookToken);
 
             List<Embed> embeds = new List<Embed>();
 
-            // Handle discord character limit
             string description = converter.Convert(message.DocumentNode
                 .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[2]/tr[2]/td").InnerHtml);
+
+            // Remove leftover div tag
+            sanitizer.AllowedTags.Remove("div");
+            description = sanitizer.Sanitize(description);
+             
+            // Handle discord character limit
             string[] descriptionChunks = Split(description, 2048).ToArray();
             for (var i = 0; i < descriptionChunks.Length; i++)
             {
