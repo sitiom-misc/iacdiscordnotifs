@@ -98,12 +98,14 @@ namespace IacDiscordNotifs
             // Remove leftover div tag
             sanitizer.AllowedTags.Remove("div");
             description = sanitizer.Sanitize(description);
-             
+
             // Handle discord character limit
             string[] descriptionChunks = Split(description, 2048).ToArray();
             for (var i = 0; i < descriptionChunks.Length; i++)
             {
                 string descriptionChunk = descriptionChunks[i];
+                string title = converter.Convert(message.DocumentNode
+                        .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[2]/td[2]").InnerHtml).Trim();
 
                 var embed = new EmbedBuilder
                 {
@@ -113,8 +115,7 @@ namespace IacDiscordNotifs
 
                 if (i == 0)
                 {
-                    embed.Title = converter.Convert(message.DocumentNode
-                        .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[2]/td[2]").InnerHtml);
+                    embed.Title = title;
                     embed.Url = converter.Convert(message.DocumentNode
                         .SelectSingleNode("/html/body/table//tr/td/table/tr[3]/td/table//tr/td/a[1]")
                         .GetAttributeValue("href", null));
@@ -122,6 +123,12 @@ namespace IacDiscordNotifs
                 }
                 if (i == descriptionChunks.Length - 1)
                 {
+                    if (title.StartsWith("Given: assessment"))
+                    {
+                        embed.ImageUrl =
+                            "https://iacademy.neolms.com/images/notification-headers/notification-assignment-given.png";
+                    }
+
                     embed.Footer = new EmbedFooterBuilder
                     {
                         Text =
