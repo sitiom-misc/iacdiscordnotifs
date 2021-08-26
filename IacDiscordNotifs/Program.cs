@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Webhook;
 using Ganss.XSS;
 using Html2Markdown;
@@ -11,13 +6,27 @@ using HtmlAgilityPack;
 using MailKit;
 using MailKit.Net.Imap;
 using MimeKit;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace IacDiscordNotifs
 {
     static class Program
     {
         private static CancellationTokenSource _done;
-        private static readonly string[] IgnoreFilter = { "Graded:", "Due soon:", "You were awarded", "Lesson " };
+        private static readonly string[] IgnoreFilter =
+        {
+            "Graded:",
+            "Due soon:",
+            "You were awarded",
+            "Lesson ",
+            " accepted your friendship invitation",
+            "You are now enrolled in class ",
+            "You have been added to the group"
+        };
 
         private static async Task Main()
         {
@@ -32,11 +41,11 @@ namespace IacDiscordNotifs
             // Keep track of messages
             int count =
                 (await client.Inbox.FetchAsync(0, -1, MessageSummaryItems.Full | MessageSummaryItems.UniqueId))
-                .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.StartsWith(ignoreFilter)))
+                .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.StartsWith(ignoreFilter) || m.NormalizedSubject.EndsWith(ignoreFilter)))
                 .OrderBy(m => m.Date)
                 .Count();
 
-            client.Inbox.CountChanged += (sender, e) =>
+            client.Inbox.CountChanged += (_, _) =>
             {
                 _done.Cancel();
             };
@@ -50,7 +59,7 @@ namespace IacDiscordNotifs
                 }
                 catch
                 {
-                    //Disconnect Connection
+                    // Disconnect Connection
                     await client.DisconnectAsync(true);
                     throw;
                 }
