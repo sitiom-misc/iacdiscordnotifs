@@ -1,35 +1,34 @@
 {
   "name": "IacDiscordNotifs",
   "description": "Forward iACADEMY NEO LMS Notifications to a Discord Webhook.",
-  "keywords": [
-    "iacademy",
-    "discord webhooks",
-    "email"
-  ],
+  "keywords": [ "iacademy", "discord webhooks", "email" ],
   "repository": "https://github.com/iJSD-Org/IacDiscordNotifs",
   "env": {
     "GMAIL_USERNAME": {
-      "description": "A secret key for verifying the integrity of signed cookies.",
-      "generator": "secret"
+      "description": "The email of the specified account",
+      "value": "someone@iacademy.edu.ph"
     },
     "GMAIL_PASSWORD": {
-      "description": "The number of processes to run."
+      "description": "The password of the specified email",
+      "value": "12345"
     },
     "WEBHOOK_ID": {
-      "description": "The number of processes to run."
+      "description": "The ID of the Discord webhook.",
+      "value": "880328238000406549"
     },
     "WEBHOOK_TOKEN": {
-      "description": "The number of processes to run."
+      "description": "The token of the Discord webhook.",
+      "value": "Yc-lJRvDPBn5sryNuS_SQXGIVD9gjac2MNNydKH6yErMOgEVOzeHf9gfK5F0FkW1ob_z"
     },
     "MESSAGE_TEXT": {
       "description": "The content of the message that will be put alongside the embed.",
-      "required": "false"
+      "value": "@everyone",
+      "required": false
     }
-  }
+  },
   "buildpacks": [
     {
       "url": "https://github.com/jincod/dotnetcore-buildpack"
     }
   ]
-  }
 }
