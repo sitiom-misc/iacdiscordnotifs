@@ -42,7 +42,7 @@ namespace IacDiscordNotifs
             // Keep track of messages
             int count =
                 (await client.Inbox.FetchAsync(0, -1, MessageSummaryItems.Full | MessageSummaryItems.UniqueId))
-                .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.StartsWith(ignoreFilter) || m.NormalizedSubject.EndsWith(ignoreFilter)))
+                .Where(m => m.Envelope.From.ToString() == "\"iACADEMY-NEO\" <messages@neolms.com>" && !IgnoreFilter.Any(ignoreFilter => m.NormalizedSubject.Trim().StartsWith(ignoreFilter) || m.NormalizedSubject.Trim().EndsWith(ignoreFilter)))
                 .OrderBy(m => m.Date)
                 .Count();
 
