@@ -26,7 +26,8 @@ namespace IacDiscordNotifs
             " accepted your friendship invitation",
             "You are now enrolled in class ",
             "You have been added to the group ",
-            "Your photo was accepted"
+            "Your photo was accepted",
+            "You have been transferred to class "
         };
 
         private static async Task Main()
