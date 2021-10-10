@@ -21,6 +21,7 @@ namespace IacDiscordNotifs
         {
             "Graded:",
             "Due soon:",
+            "Comment posted in ",
             "You were awarded",
             "Lesson ",
             " accepted your friendship invitation",
