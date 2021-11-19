@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.4.0" />
-    <PackageReference Include="Html2Markdown" Version="4.0.0.427" />
+    <PackageReference Include="Html2Markdown" Version="5.0.0.468" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
     <PackageReference Include="HtmlSanitizer" Version="6.0.453" />
     <PackageReference Include="MailKit" Version="2.15.0" />
