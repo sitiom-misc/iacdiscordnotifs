@@ -27,11 +27,11 @@ jobs:
   dependabot-automerge:
     needs: test
     runs-on: ubuntu-latest
-
     permissions:
       pull-requests: write
       contents: write
-
+    if: ${{ github.event_name == 'pull_request' }}
+    
     steps:
       - uses: fastify/github-action-merge-dependabot@v3.0.2
         with:
