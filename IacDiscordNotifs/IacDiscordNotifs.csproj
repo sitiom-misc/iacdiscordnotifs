@@ -9,7 +9,7 @@
     <PackageReference Include="Discord.Net" Version="3.7.2" />
     <PackageReference Include="Html2Markdown" Version="5.0.2.561" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
-    <PackageReference Include="HtmlSanitizer" Version="7.1.509" />
+    <PackageReference Include="HtmlSanitizer" Version="7.1.512" />
     <PackageReference Include="MailKit" Version="3.2.0" />
   </ItemGroup>
 
