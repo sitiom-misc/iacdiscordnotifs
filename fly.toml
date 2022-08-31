@@ -7,3 +7,4 @@ app = "iacdiscordnotifs"
   [build.args]
     BP_DOTNET_PROJECT_PATH="IacDiscordNotifs"
 
+[[services]]
