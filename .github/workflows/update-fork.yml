@@ -16,7 +16,7 @@ jobs:
       - uses: fregante/setup-git-user@v1
       - name: Check if fork is synced with upstream
         id: check_sync
-        uses: MadLadSquad/check-for-synced-branches-action@v1.0.0.2
+        uses: MadLadSquad/check-for-synced-branches-action@v1.0.0.3
         with:
           upstream-url: "https://github.com/iJSD-Org/IacDiscordNotifs"
           first-branch: main
