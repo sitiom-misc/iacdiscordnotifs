@@ -10,7 +10,7 @@
     <PackageReference Include="Html2Markdown" Version="5.0.2.561" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.45" />
     <PackageReference Include="HtmlSanitizer" Version="7.1.542" />
-    <PackageReference Include="MailKit" Version="3.4.0" />
+    <PackageReference Include="MailKit" Version="3.4.1" />
   </ItemGroup>
 
 </Project>
