@@ -1,7 +1,5 @@
 ﻿using Discord;
 using Discord.Webhook;
-using Ganss.Xss;
-using Html2Markdown;
 using HtmlAgilityPack;
 using MailKit;
 using MailKit.Net.Imap;
@@ -12,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ReverseMarkdown;
 
 namespace IacDiscordNotifs
 {
@@ -95,30 +94,23 @@ namespace IacDiscordNotifs
 
         private static async void SendIacNotifToWebhook(string htmlMessage, ulong webhookId, string webhookToken, string messageText = null)
         {
-            Converter converter = new Converter();
-            var sanitizer = new HtmlSanitizer();
-            HtmlDocument message = new HtmlDocument();
+            using var client = new DiscordWebhookClient(webhookId, webhookToken);
+            var converter = new Converter();
+            var message = new HtmlDocument();
 
             message.LoadHtml(htmlMessage);
 
-            using var client = new DiscordWebhookClient(webhookId, webhookToken);
-
-            List<Embed> embeds = new List<Embed>();
-
+            string title = converter.Convert(message.DocumentNode
+                .SelectSingleNode("//td[b[contains(text(),'Subject:')]]/following-sibling::td").InnerText).Trim();
             string description = converter.Convert(message.DocumentNode
                 .SelectSingleNode("(//table[2]//td)[last()]").InnerHtml);
+            List<Embed> embeds = new List<Embed>();
 
-            // Remove leftover div tag
-            sanitizer.AllowedTags.Remove("div");
-            description = sanitizer.Sanitize(description);
-
-            // Handle discord character limit
+            // Split to chunks to handle character limit
             List<string> descriptionChunks = StringUtils.Split(description, 2048);
             for (var i = 0; i < descriptionChunks.Count; i++)
             {
                 string descriptionChunk = descriptionChunks[i];
-                string title = converter.Convert(message.DocumentNode
-                        .SelectSingleNode("//td[b[contains(text(),'Subject:')]]/following-sibling::td").InnerText).Trim();
 
                 var embed = new EmbedBuilder
                 {
@@ -145,13 +137,12 @@ namespace IacDiscordNotifs
                             "Automatic notification via https://github.com/iJSD-Org/IacDiscordNotifs"
 
                     };
+
                     DateTime dateTime = DateTime.ParseExact(
                         message.DocumentNode.SelectSingleNode("//tr[td[b[text()='From:']]]/td[3]/text()[2]")
                         .InnerText.Trim(), "@ MMM d, h:mm tt", CultureInfo.InvariantCulture);
-
                     // UTC +8 because iAcademy is in the Philippines
                     embed.Timestamp = new DateTimeOffset(dateTime, TimeSpan.FromHours(8));
-
                 }
 
                 embeds.Add(embed.Build());
