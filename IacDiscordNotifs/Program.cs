@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.Webhook;
-using Ganss.XSS;
+using Ganss.Xss;
 using Html2Markdown;
 using HtmlAgilityPack;
 using MailKit;
@@ -8,6 +8,7 @@ using MailKit.Net.Imap;
 using MimeKit;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace IacDiscordNotifs
 
         private static async Task Main()
         {
-            var client = new ImapClient { ServerCertificateValidationCallback = (s, c, h, e) => true };
+            var client = new ImapClient { ServerCertificateValidationCallback = (_, _, _, _) => true };
             await client.ConnectAsync("imap.gmail.com", 993, true);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
             await client.AuthenticateAsync(Environment.GetEnvironmentVariable("GMAIL_USERNAME"), Environment.GetEnvironmentVariable("GMAIL_PASSWORD"));
@@ -105,19 +106,19 @@ namespace IacDiscordNotifs
             List<Embed> embeds = new List<Embed>();
 
             string description = converter.Convert(message.DocumentNode
-                .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[2]/tr[2]/td").InnerHtml);
+                .SelectSingleNode("(//table[2]//td)[last()]").InnerHtml);
 
             // Remove leftover div tag
             sanitizer.AllowedTags.Remove("div");
             description = sanitizer.Sanitize(description);
 
             // Handle discord character limit
-            string[] descriptionChunks = Split(description, 2048).ToArray();
-            for (var i = 0; i < descriptionChunks.Length; i++)
+            List<string> descriptionChunks = StringUtils.Split(description, 2048);
+            for (var i = 0; i < descriptionChunks.Count; i++)
             {
                 string descriptionChunk = descriptionChunks[i];
                 string title = converter.Convert(message.DocumentNode
-                        .SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[2]/td[2]").InnerHtml).Trim();
+                        .SelectSingleNode("//td[b[contains(text(),'Subject:')]]/following-sibling::td").InnerText).Trim();
 
                 var embed = new EmbedBuilder
                 {
@@ -128,12 +129,9 @@ namespace IacDiscordNotifs
                 if (i == 0)
                 {
                     embed.Title = title;
-                    embed.Url = converter.Convert(message.DocumentNode
-                        .SelectSingleNode("/html/body/table//tr/td/table/tr[3]/td/table//tr/td/a[1]")
-                        .GetAttributeValue("href", null));
                     embed.ThumbnailUrl = "https://portalv2.iacademy.edu.ph/images/iacnew.png";
                 }
-                if (i == descriptionChunks.Length - 1)
+                if (i == descriptionChunks.Count - 1)
                 {
                     if (title.StartsWith("Given: assessment"))
                     {
@@ -144,29 +142,25 @@ namespace IacDiscordNotifs
                     embed.Footer = new EmbedFooterBuilder
                     {
                         Text =
-                            $"{message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[2]").InnerText.Trim()} • Automatic notification via https://github.com/iJSD-Org/IacDiscordNotifs"
+                            "Automatic notification via https://github.com/iJSD-Org/IacDiscordNotifs"
+
                     };
+                    DateTime dateTime = DateTime.ParseExact(
+                        message.DocumentNode.SelectSingleNode("//tr[td[b[text()='From:']]]/td[3]/text()[2]")
+                        .InnerText.Trim(), "@ MMM d, h:mm tt", CultureInfo.InvariantCulture);
+
+                    // UTC +8 because iAcademy is in the Philippines
+                    embed.Timestamp = new DateTimeOffset(dateTime, TimeSpan.FromHours(8));
+
                 }
 
                 embeds.Add(embed.Build());
             }
 
-            await client.SendMessageAsync(messageText, embeds: embeds, username: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[3]/text()[1]").InnerText.Trim(), avatarUrl: message.DocumentNode.SelectSingleNode("/html/body/table/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/img").GetAttributeValue("src", null));
-        }
-
-        private static IEnumerable<string> Split(this string str, int chunkSize)
-        {
-            if (string.IsNullOrEmpty(str) || chunkSize < 1)
-                throw new ArgumentException("String can not be null or empty and chunk size should be greater than zero.");
-            var chunkCount = str.Length / chunkSize + (str.Length % chunkSize != 0 ? 1 : 0);
-            for (var i = 0; i < chunkCount; i++)
-            {
-                var startIndex = i * chunkSize;
-                if (startIndex + chunkSize >= str.Length)
-                    yield return str.Substring(startIndex);
-                else
-                    yield return str.Substring(startIndex, chunkSize);
-            }
+            await client.SendMessageAsync(messageText,
+                embeds: embeds,
+                username: message.DocumentNode.SelectSingleNode("//tr[td[b[text()='From:']]]/td[3]/text()[1]").InnerText.Trim(),
+                avatarUrl: message.DocumentNode.SelectSingleNode("//tr[td[b[text()='From:']]]/td[2]/img").GetAttributeValue("src", null));
         }
     }
 }
