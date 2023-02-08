@@ -33,6 +33,6 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     
     steps:
-      - uses: fastify/github-action-merge-dependabot@v3.5
+      - uses: fastify/github-action-merge-dependabot@v3.6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
