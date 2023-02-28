@@ -13,7 +13,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }} # So that the workflow triggers on fork update
-      - uses: fregante/setup-git-user@v1
+      - uses: fregante/setup-git-user@v2
       - name: Check if fork is synced with upstream
         id: check_sync
         uses: MadLadSquad/check-for-synced-branches-action@v1.0.0.3
