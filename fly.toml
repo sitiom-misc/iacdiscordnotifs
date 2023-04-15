@@ -1,4 +1,5 @@
 app = "iacdiscordnotifs"
+primary_region = "hkg"
 
 [build]
   builder = "paketobuildpacks/builder:base"
