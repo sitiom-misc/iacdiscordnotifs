@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="3.10.0" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.47" />
     <PackageReference Include="MailKit" Version="4.0.0" />
     <PackageReference Include="ReverseMarkdown" Version="3.25.0" />
   </ItemGroup>
