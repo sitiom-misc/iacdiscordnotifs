@@ -1,0 +1,4 @@
+app = "iacdiscordnotifs"
+primary_region = "hkg"
+
+[[services]]
