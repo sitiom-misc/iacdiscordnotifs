@@ -1,0 +1,180 @@
+use anyhow::{Context, Result};
+use async_imap::extensions::idle::IdleResponse;
+use chrono::{FixedOffset, NaiveDateTime};
+use dotenvy::dotenv;
+use futures::TryStreamExt;
+use itertools::{intersperse, Itertools};
+use mailparse::{dateparse, parse_mail, MailHeaderMap};
+use regex::Regex;
+use scraper::{Html, Selector};
+use serenity::all::{CreateEmbedFooter, Timestamp};
+use serenity::builder::{CreateEmbed, ExecuteWebhook};
+use serenity::http::Http;
+use serenity::model::webhook::Webhook;
+use std::collections::HashSet;
+use std::env;
+use tokio::net::TcpStream;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    dotenv().context(".env file not found")?;
+
+    idle_and_listen_to_neo_notifs().await?;
+
+    Ok(())
+}
+
+async fn idle_and_listen_to_neo_notifs() -> Result<()> {
+    let login = env::var("GMAIL_USERNAME")?;
+    let password = env::var("GMAIL_PASSWORD")?;
+
+    let imap_addr = ("imap.gmail.com", 993);
+    let tcp_stream = TcpStream::connect(imap_addr).await?;
+    let tls = async_native_tls::TlsConnector::new();
+    let tls_stream = tls.connect("imap.gmail.com", tcp_stream).await?;
+
+    let client = async_imap::Client::new(tls_stream);
+    println!("Connected to {}:{}", imap_addr.0, imap_addr.1);
+
+    let mut session = client.login(&login, &password).await.map_err(|e| e.0)?;
+    println!("Logged in as {}", &login);
+
+    session.select("INBOX").await?;
+    println!("INBOX selected");
+
+    let ignore_filter = [
+        "Graded: ",
+        "Due soon: ",
+        "Comment posted in ",
+        "You were awarded ",
+        "Lesson ",
+        " accepted your friendship invitation",
+        "You are now enrolled in class ",
+        "You have been added to the group ",
+        "Your photo was accepted",
+        "You have been transferred to class ",
+    ];
+    let search_query = format!(
+        "X-GM-RAW \"from:iACADEMY-NEO <messages@neolms.com> -subject:({})\"",
+        intersperse(
+            ignore_filter.iter().map(|f| format!("\\\"{f}\\\"")),
+            " OR ".to_string()
+        )
+        .collect::<String>()
+    );
+
+    let mut uids = session.uid_search(&search_query).await?;
+    let re = Regex::new(r"\[https?://.+]\((https?://.+)\)")?; // Discord won't render markdown links with an URL as the text
+
+    // TODO: Handle IDLE timeout
+    println!("Starting IDLE");
+    loop {
+        let mut idle = session.idle();
+        idle.init().await?;
+
+        let (idle_wait, _interrupt) = idle.wait();
+        let idle_result = idle_wait.await?;
+        match idle_result {
+            IdleResponse::NewData(_) => {
+                session = idle.done().await?;
+                let old_uids = uids;
+                uids = session.uid_search(&search_query).await?;
+                let new_uids = uids
+                    .iter()
+                    .filter(|uid| !old_uids.contains(uid))
+                    .collect::<HashSet<_>>();
+                if new_uids.is_empty() {
+                    continue;
+                }
+                // Fetch and send the new messages to Discord
+                let messages: Vec<_> = session
+                    .uid_fetch(new_uids.iter().join(","), "RFC822")
+                    .await?
+                    .into_stream()
+                    .try_collect()
+                    .await?;
+                let messages = messages.into_iter()
+                    .map(|m| {
+                        let mail = parse_mail(m.body().unwrap()).unwrap();
+                        let body = mail.get_body().unwrap();
+                        // Asia/Manila
+                        let tz = FixedOffset::east_opt(8 * 3600).unwrap();
+                        let timestamp = NaiveDateTime::from_timestamp_opt(
+                            dateparse(&mail.headers.get_first_value("Date").unwrap()).unwrap(), 0).unwrap().and_local_timezone(tz).unwrap();
+                        (body, timestamp)
+                    })
+                    .map(|(body, timestamp)| {
+                        let document = Html::parse_document(&body);
+                        let title = document.select(
+                            &Selector::parse("tr:nth-child(2) table:first-child tr:nth-child(2) td:last-child").unwrap())
+                            .next().unwrap().text().next().unwrap().trim().to_owned();
+                        let avatar_url = document.select(
+                            &Selector::parse("tr:nth-child(2) table:first-child tr:first-child td:nth-child(2) img").unwrap())
+                            .next().unwrap().value().attr("src").unwrap().to_owned();
+                        let author = document.select(
+                            &Selector::parse("tr:nth-child(2) table:first-child tr:first-child td:last-child").unwrap())
+                            .next().unwrap().text().next().unwrap().trim().to_owned();
+                        let mut description = mdka::from_html(&document.select(
+                            &Selector::parse("tr:nth-child(2) table:last-child tr:last-child td").unwrap())
+                            .next().unwrap().inner_html());
+                        description = re.replace_all(&description, "$1").to_string();
+
+                        (title, description, author, avatar_url, timestamp)
+                    })
+                    .sorted_by_key(|(.., timestamp)| *timestamp)
+                    .collect::<Vec<_>>();
+                for (title, description, author, avatar_url, timestamp) in messages {
+                    println!("{timestamp}: {author}, {title}");
+                    send_announcement(&title, &description, &author, &avatar_url, timestamp).await;
+                }
+            }
+            reason => {
+                println!("IDLE failed {:?}", reason);
+                session = idle.done().await?;
+            }
+        }
+    }
+}
+
+// TODO: Check for max embed limits
+async fn send_announcement(
+    title: &str,
+    description: &str,
+    user_name: &str,
+    avatar_url: &str,
+    timestamp: impl Into<Timestamp>,
+) {
+    let webhook_url =
+        env::var("WEBHOOK_URL").expect("WEBHOOK_URL environment variable is not set.");
+    let content =
+        env::var("MESSAGE_CONTENT").expect("MESSAGE_CONTENT environment variable is not set.");
+
+    let http = Http::new("");
+    let webhook = Webhook::from_url(&http, &webhook_url)
+        .await
+        .expect("WEBHOOK_URL is malformed.");
+
+    let mut embed = CreateEmbed::new()
+        .title(title)
+        .description(description)
+        .thumbnail("https://portalv2.iacademy.edu.ph/images/iacnew.png")
+        .colour(0x014FB3)
+        .footer(CreateEmbedFooter::new(concat!(
+            "Automatic notification via ",
+            env!("CARGO_PKG_REPOSITORY")
+        )))
+        .timestamp(timestamp);
+    if title.starts_with("Given: assessment ") {
+        embed = embed.image("https://iacademy-college.neolms.com/images/notification-headers/notification-assignment-given.png");
+    }
+
+    let builder = ExecuteWebhook::new()
+        .username(user_name)
+        .avatar_url(avatar_url)
+        .content(content)
+        .embed(embed);
+    webhook
+        .execute(&http, false, builder)
+        .await
+        .expect("Could not execute webhook.");
+}

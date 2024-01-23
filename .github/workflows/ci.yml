@@ -1,38 +1,23 @@
 name: ci
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      RUST_BACKTRACE: 1
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4.0.0
-      with:
-        dotnet-version: '6.x'
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-
-  dependabot-automerge:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    if: ${{ github.event_name == 'pull_request' }}
-    
-    steps:
-      - uses: fastify/github-action-merge-dependabot@v3.9
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --release
+      - name: Run tests
+        run: cargo test --verbose

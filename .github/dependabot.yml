@@ -8,8 +8,7 @@ updates:
     commit-message:
       prefix: chore
       include: scope
-      
-  - package-ecosystem: "nuget"
+  - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "daily"

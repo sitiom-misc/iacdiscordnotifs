@@ -1,15 +1,9 @@
-# IacDiscordNotifs
+# iacdiscordnotifs
 
-Forward iACADEMY NEO LMS Notifications to a Discord Webhook.
+Listen to NEO LMS notifications from an email and forward it to a Discord webhook.
 
 ## Setup
 
-Configure the following environment variables accordingly and run the program:
-
-- `GMAIL_USERNAME`
-- `GMAIL_PASSWORD` - Only works with an [App Password](https://support.google.com/accounts/answer/185833)!
-- `WEBHOOK_ID`
-- `WEBHOOK_TOKEN`
-- `MESSAGE_TEXT`
+Create an `.env` file and configure the corresponding environment variables. See: [`.env.example`](./.env.example)
 
 A `fly.toml` file is included for deployment to [fly.io](https://fly.io/).
