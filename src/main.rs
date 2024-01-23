@@ -17,7 +17,9 @@ use tokio::net::TcpStream;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv().context(".env file not found")?;
+    if let Err(e) = dotenv() {
+        println!(".env file not loaded: {e}");
+    }
 
     idle_and_listen_to_neo_notifs().await?;
 
@@ -25,8 +27,8 @@ async fn main() -> Result<()> {
 }
 
 async fn idle_and_listen_to_neo_notifs() -> Result<()> {
-    let login = env::var("GMAIL_USERNAME")?;
-    let password = env::var("GMAIL_PASSWORD")?;
+    let login = env::var("GMAIL_USERNAME").context("Failed to load GMAIL_USERNAME")?;
+    let password = env::var("GMAIL_PASSWORD").context("Failed to load GMAIL_PASSWORD")?;
 
     let imap_addr = ("imap.gmail.com", 993);
     let tcp_stream = TcpStream::connect(imap_addr).await?;
@@ -144,10 +146,8 @@ async fn send_announcement(
     avatar_url: &str,
     timestamp: impl Into<Timestamp>,
 ) {
-    let webhook_url =
-        env::var("WEBHOOK_URL").expect("WEBHOOK_URL environment variable is not set.");
-    let content =
-        env::var("MESSAGE_CONTENT").expect("MESSAGE_CONTENT environment variable is not set.");
+    let webhook_url = env::var("WEBHOOK_URL").expect("Failed to load WEBHOOK_URL");
+    let content = env::var("MESSAGE_CONTENT").expect("Failed to load MESSAGE_CONTENT");
 
     let http = Http::new("");
     let webhook = Webhook::from_url(&http, &webhook_url)
