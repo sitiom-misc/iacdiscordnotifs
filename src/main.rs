@@ -103,6 +103,7 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
                     .try_collect()
                     .await?;
                 let messages = messages.into_iter()
+                    .filter(|m| m.body().is_some())
                     .map(|m| {
                         let mail = parse_mail(m.body().unwrap()).unwrap();
                         let body = mail.get_body().unwrap();
