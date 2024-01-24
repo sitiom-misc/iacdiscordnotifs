@@ -13,6 +13,7 @@ use serenity::http::Http;
 use serenity::model::webhook::Webhook;
 use std::collections::HashSet;
 use std::env;
+use std::time::Duration;
 use tokio::net::TcpStream;
 
 #[tokio::main]
@@ -68,17 +69,23 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
     let mut uids = session.uid_search(&search_query).await?;
     let re = Regex::new(r"\[https?://.+]\((https?://.+)\)")?; // Discord won't render markdown links with an URL as the text
 
-    // TODO: Handle IDLE timeout
     println!("Starting IDLE");
     loop {
         let mut idle = session.idle();
         idle.init().await.context("Failed to initialize IDLE")?;
 
-        let (idle_wait, _interrupt) = idle.wait();
+        // Note: IMAP servers are only supposed to drop the connection after 30 minutes, so normally
+        // we'd IDLE for a max of, say, ~29 minutes... but Gmail seems to drop idle connections after
+        // about 10 minutes, so we'll only idle for 9 minutes.
+        let (idle_wait, _interrupt) = idle.wait_with_timeout(Duration::from_secs(9 * 60));
         let idle_result = idle_wait.await?;
+        session = idle.done().await?;
         match idle_result {
+            IdleResponse::Timeout => {}
+            IdleResponse::ManualInterrupt => {
+                unreachable!()
+            }
             IdleResponse::NewData(_) => {
-                session = idle.done().await?;
                 let old_uids = uids;
                 uids = session.uid_search(&search_query).await?;
                 let new_uids = uids
@@ -129,10 +136,6 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
                     println!("{timestamp}: {author}, {title}");
                     send_announcement(&title, &description, &author, &avatar_url, timestamp).await;
                 }
-            }
-            reason => {
-                println!("IDLE failed {:?}", reason);
-                session = idle.done().await?;
             }
         }
     }
