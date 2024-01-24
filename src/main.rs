@@ -72,7 +72,7 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
     println!("Starting IDLE");
     loop {
         let mut idle = session.idle();
-        idle.init().await?;
+        idle.init().await.context("Failed to initialize IDLE")?;
 
         let (idle_wait, _interrupt) = idle.wait();
         let idle_result = idle_wait.await?;
