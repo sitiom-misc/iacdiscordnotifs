@@ -67,7 +67,7 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
     );
 
     let mut uids = session.uid_search(&search_query).await?;
-    let re = Regex::new(r"\[https?://.+]\((https?://.+)\)")?; // Discord won't render markdown links with an URL as the text
+    let re = Regex::new(r"\[https?://.+]\((https?://.+)\)").unwrap(); // Discord won't render markdown links with an URL as the text
 
     println!("Starting IDLE");
     loop {
@@ -109,8 +109,8 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
                         let body = mail.get_body().unwrap();
                         // Asia/Manila
                         let tz = FixedOffset::east_opt(8 * 3600).unwrap();
-                        let timestamp = NaiveDateTime::from_timestamp_opt(
-                            dateparse(&mail.headers.get_first_value("Date").unwrap()).unwrap(), 0).unwrap().and_local_timezone(tz).unwrap();
+                        let timestamp = dateparse(&mail.headers.get_first_value("Date").unwrap()).unwrap();
+                        let timestamp = NaiveDateTime::from_timestamp_opt(timestamp, 0).unwrap().and_local_timezone(tz).unwrap();
                         (body, timestamp)
                     })
                     .map(|(body, timestamp)| {
@@ -135,7 +135,8 @@ async fn idle_and_listen_to_neo_notifs() -> Result<()> {
                     .collect::<Vec<_>>();
                 for (title, description, author, avatar_url, timestamp) in messages {
                     println!("{timestamp}: {author}, {title}");
-                    send_announcement(&title, &description, &author, &avatar_url, timestamp).await;
+                    send_announcement(&title, &description, &author, &avatar_url, timestamp)
+                        .await?;
                 }
             }
         }
@@ -149,14 +150,14 @@ async fn send_announcement(
     user_name: &str,
     avatar_url: &str,
     timestamp: impl Into<Timestamp>,
-) {
-    let webhook_url = env::var("WEBHOOK_URL").expect("Failed to load WEBHOOK_URL");
-    let content = env::var("MESSAGE_CONTENT").expect("Failed to load MESSAGE_CONTENT");
+) -> Result<()> {
+    let webhook_url = env::var("WEBHOOK_URL").context("Failed to load WEBHOOK_URL")?;
+    let content = env::var("MESSAGE_CONTENT").context("Failed to load MESSAGE_CONTENT")?;
 
     let http = Http::new("");
     let webhook = Webhook::from_url(&http, &webhook_url)
         .await
-        .expect("WEBHOOK_URL is malformed.");
+        .context("WEBHOOK_URL is malformed.")?;
 
     let mut embed = CreateEmbed::new()
         .title(title)
@@ -180,5 +181,7 @@ async fn send_announcement(
     webhook
         .execute(&http, false, builder)
         .await
-        .expect("Could not execute webhook.");
+        .context("Could not execute webhook.")?;
+
+    Ok(())
 }
