@@ -22,12 +22,12 @@ async fn main() -> Result<()> {
         println!(".env file not loaded: {e}");
     }
 
-    idle_and_listen_to_neo_notifs().await?;
+    listen_to_neo_messages().await?;
 
     Ok(())
 }
 
-async fn idle_and_listen_to_neo_notifs() -> Result<()> {
+async fn listen_to_neo_messages() -> Result<()> {
     let login = env::var("GMAIL_USERNAME").context("Failed to load GMAIL_USERNAME")?;
     let password = env::var("GMAIL_PASSWORD").context("Failed to load GMAIL_PASSWORD")?;
 
