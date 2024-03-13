@@ -56,6 +56,7 @@ async fn listen_to_neo_messages() -> Result<()> {
         "You have been added to the group ",
         "Your photo was accepted",
         "You have been transferred to class ",
+        "You were unenrolled from class "
     ];
     let search_query = format!(
         "X-GM-RAW \"from:iACADEMY-NEO <messages@neolms.com> -subject:({})\"",
