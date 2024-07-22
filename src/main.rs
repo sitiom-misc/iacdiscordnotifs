@@ -163,7 +163,7 @@ async fn send_announcement(
     let mut embed = CreateEmbed::new()
         .title(title)
         .description(description)
-        .thumbnail("https://portalv2.iacademy.edu.ph/images/iacnew.png")
+        .thumbnail("https://employeeportal.iacademy.edu.ph/images/iacnew.png")
         .colour(0x014FB3)
         .footer(CreateEmbedFooter::new(concat!(
             "Automatic notification via ",
