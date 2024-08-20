@@ -11,17 +11,18 @@ license = "MIT"
 
 [dependencies]
 anyhow = "1.0"
-itertools = "0.12.0"
+itertools = "0.13.0"
 serenity = "0.12"
-chrono = "0.4.31"
-regex = "1.10.3"
-tokio = { version = "1.35.1", features = ["full"] }
+chrono = "0.4.38"
+chrono-tz = "0.9.0"
+regex = "1.10.6"
+tokio = { version = "1.39.3", features = ["full"] }
 dotenvy = "0.15.7"
 futures = "0.3.30"
-async-native-tls = { version = "0.5", default-features = false, features = ["runtime-tokio"]}
-async-imap = { version = "0.9.5", default-features = false, features = ["runtime-tokio"]}
-mailparse = "0.14.1"
-scraper = "0.18.1"
+async-native-tls = { version = "0.5", default-features = false, features = ["runtime-tokio"] }
+async-imap = { version = "0.9.7", default-features = false, features = ["runtime-tokio"] }
+mailparse = "0.15.0"
+scraper = "0.20.0"
 mdka = "1.2"
 
 [profile.release]

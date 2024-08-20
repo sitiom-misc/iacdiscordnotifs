@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use async_imap::extensions::idle::IdleResponse;
-use chrono::{FixedOffset, NaiveDateTime};
+use chrono::TimeZone;
+use chrono_tz::Asia::Manila;
 use dotenvy::dotenv;
 use futures::TryStreamExt;
 use itertools::{intersperse, Itertools};
@@ -56,7 +57,7 @@ async fn listen_to_neo_messages() -> Result<()> {
         "You have been added to the group ",
         "Your photo was accepted",
         "You have been transferred to class ",
-        "You were unenrolled from class "
+        "You were unenrolled from class ",
     ];
     let search_query = format!(
         "X-GM-RAW \"from:iACADEMY-NEO <messages@neolms.com> -subject:({})\"",
@@ -108,10 +109,8 @@ async fn listen_to_neo_messages() -> Result<()> {
                     .map(|m| {
                         let mail = parse_mail(m.body().unwrap()).unwrap();
                         let body = mail.get_body().unwrap();
-                        // Asia/Manila
-                        let tz = FixedOffset::east_opt(8 * 3600).unwrap();
                         let timestamp = dateparse(&mail.headers.get_first_value("Date").unwrap()).unwrap();
-                        let timestamp = NaiveDateTime::from_timestamp_opt(timestamp, 0).unwrap().and_local_timezone(tz).unwrap();
+                        let timestamp = Manila.timestamp_opt(timestamp, 0).single().unwrap();
                         (body, timestamp)
                     })
                     .map(|(body, timestamp)| {
