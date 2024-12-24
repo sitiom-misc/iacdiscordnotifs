@@ -1,4 +1,8 @@
 app = "iacdiscordnotifs"
 primary_region = "hkg"
 
+[build]
+  builder = "paketobuildpacks/builder-jammy-base"
+  buildpacks = ["paketo-community/rust"]
+
 [[services]]
